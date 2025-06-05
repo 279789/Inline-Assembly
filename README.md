@@ -1,51 +1,263 @@
 <!---
 {
-  "depends_on": [],
+  "id": "6e50613d-60e2-40a8-91ae-609e0721f613",
+  "depends_on": [
+    "81f2e303-d35c-4857-9cb7-190e3c5372b0"
+  ],
   "author": "Stephan Bökelmann",
-  "first_used": "2025-03-17",
-  "keywords": ["learning", "exercises", "education", "practice"]
+  "first_used": "2025-06-05",
+  "keywords": ["C Compiler", "Inline Assembly", "GCC Extended Asm", "Clobber List", "Inputs and Outputs"]
 }
 --->
 
-# Learning Through Exercises
+# Inline Assembly in C: Inputs, Outputs, and Clobbers
 
-## Introduction
-Learning by doing is one of the most effective methods to acquire new knowledge and skills. Rather than passively consuming information, actively engaging in problem-solving fosters deeper understanding and long-term retention. By working through structured exercises, students can grasp complex concepts in a more intuitive and applicable way. This approach is particularly beneficial in technical fields like programming, mathematics, and engineering.
+> In this exercise you will learn how to embed inline assembly in C using GCC's extended asm syntax. Furthermore we will explore how to declare input operands, capture output values, and correctly use the clobber list to ensure reliable interaction between compiler and assembler.
 
-### Further Readings and Other Sources
-- [The Importance of Practice in Learning](https://www.sciencedirect.com/science/article/pii/S036013151300062X)
-- "The Art of Learning" by Josh Waitzkin
-- [How to Learn Effectively: 5 Key Strategies](https://www.edutopia.org/article/5-research-backed-learning-strategies)
+## 1) Introduction
 
-## Tasks
-1. **Write a Summary**: Summarize the concept of "learning by doing" in 3-5 sentences.
-2. **Example Identification**: List three examples from your own experience where learning through exercises helped you understand a topic better.
-3. **Create an Exercise**: Design a simple exercise for a topic of your choice that someone else could use to practice.
-4. **Follow an Exercise**: Find an online tutorial that includes exercises and complete at least two of them.
-5. **Modify an Existing Exercise**: Take a basic problem from a textbook or online course and modify it to make it slightly more challenging.
-6. **Pair Learning**: Explain a concept to a partner and guide them through an exercise without giving direct answers.
-7. **Review Mistakes**: Look at an exercise you've previously completed incorrectly. Identify why the mistake happened and how to prevent it in the future.
-8. **Time Challenge**: Set a timer for 10 minutes and try to solve as many simple exercises as possible on a given topic.
-9. **Self-Assessment**: Create a checklist to evaluate your own performance in completing exercises effectively.
-10. **Reflect on Progress**: Write a short paragraph on how this structured approach to exercises has influenced your learning.
+So far you have seen how a compiler can translate C code into machine instructions. But sometimes, you need to drop down one level closer to the hardware to write individual machine instructions yourself. This is where **inline assembly** comes into play.
 
-<details>
-  <summary>Tip for Task 5</summary>
-  Try making small adjustments first, such as increasing the difficulty slightly or adding an extra constraint.
-</details>
+Modern compilers like GCC allow you to embed assembly directly inside C code, using a feature called **extended inline assembly**. This lets you:
 
-## Questions
-1. What are the main benefits of learning through exercises compared to passive learning?
-2. How do exercises improve long-term retention?
-3. Can you think of a subject where learning through exercises might be less effective? Why?
-4. What role does feedback play in learning through exercises?
-5. How can self-designed exercises improve understanding?
-6. Why is it beneficial to review past mistakes in exercises?
-7. How does explaining a concept to someone else reinforce your own understanding?
-8. What strategies can you use to stay motivated when practicing with exercises?
-9. How can timed challenges contribute to learning efficiency?
-10. How do exercises help bridge the gap between theory and practical application?
+* access CPU registers directly,
+* execute instructions that the C language cannot express,
+* optimize certain critical code paths,
+* interface with hardware or operating system features.
 
-## Advice
-Practice consistently and seek out diverse exercises that challenge different aspects of a topic. Combine exercises with reflection and feedback to maximize your learning efficiency. Don't hesitate to adapt exercises to fit your own needs and ensure that you're actively engaging with the material, rather than just going through the motions.
+However, using inline assembly inside a C program is not without risk. You must carefully tell the compiler:
 
+* which variables are inputs,
+* which variables are outputs,
+* which registers will be modified (clobbered).
+
+GCC uses a fairly strict syntax to enforce this discipline:
+
+```c
+asm volatile (
+    "assembly instructions"
+    : output_operands
+    : input_operands
+    : clobber_list
+);
+```
+
+Each of these sections is important:
+
+* **Output operands:** variables that receive values from the assembly code.
+* **Input operands:** variables whose values are passed into the assembly code.
+* **Clobber list:** registers (or memory) that will be overwritten and must not be used by the compiler across the assembly block.
+
+The keyword `volatile` ensures the compiler does not optimize away or reorder the assembly block, assuming it might have side effects that affect program correctness.
+
+In this exercise, you will explore inline assembly step-by-step: starting with pure instructions, then introducing input and output operands, and finally working with clobbers to correctly inform the compiler.
+
+### 1.1) Further Readings and Other Sources
+
+* [GCC Inline Assembly HOWTO](https://www.ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html)
+* [x86-64 System V ABI (PDF)](https://gitlab.com/x86-psABIs/x86-64-ABI/-/raw/master/x86-64-ABI.pdf)
+* [Compiler Explorer - godbolt.org](https://godbolt.org/)
+* [Intro to Inline Assembly (YouTube)](https://www.youtube.com/watch?v=4zOaVh1pZPI)
+
+## 2) Tasks
+
+### Task 1: Pure Assembly Without Operands
+
+In this first task, we start with a simple assembly instruction that does not require any interaction with C variables.
+
+Create the following C file:
+
+```c
+// file: nop.c
+
+#include <stdio.h>
+
+int main() {
+    asm volatile ("nop");  // No operation, pure instruction
+
+    printf("Executed a NOP instruction.\n");
+    return 0;
+}
+```
+
+Here, `nop` is a real x86 assembly instruction that literally means "do nothing." It occupies one CPU cycle but does not modify any registers or memory.
+
+#### a) Compile and run:
+
+* `gcc -Wall -o nop nop.c`
+
+#### b) Inspect generated assembly:
+
+* `objdump -d nop | less`
+* Locate where the `nop` instruction appears.
+
+#### c) Reflect:
+
+* Why does the compiler allow this even without any operands?
+* What would happen if you omit `volatile`?
+
+---
+
+### Task 2: Using Input and Output Operands
+
+In this task, we introduce communication between C variables and the assembly code by passing values into and out of the assembly block.
+
+Create the following C file:
+
+```c
+// file: add.c
+
+#include <stdio.h>
+
+int main() {
+    int a = 5, b = 7, result;
+
+    asm volatile (
+        "addl %[input_b], %[input_a]"
+        : [output_res] "=r" (result)
+        : [input_a] "r" (a), [input_b] "r" (b)
+    );
+
+    printf("Result: %d\n", result);
+    return 0;
+}
+```
+
+#### Explanation:
+
+* **"addl"**: adds two 32-bit integers.
+* **Operands**:
+
+  * `"=r" (result)` declares that `result` is an output operand. The `=` means it's written by the assembly.
+  * `"r" (a)` and `"r" (b)` are input operands. The `r` constraint allows GCC to choose any general-purpose register.
+* **Named placeholders** (`%[input_a]`) make the code more readable and less error-prone than numbered operands.
+
+#### a) Compile:
+
+* `gcc -Wall -o add add.c`
+
+#### b) Inspect generated assembly:
+
+* `objdump -d add`
+* Try to identify which registers GCC assigned to which variables.
+
+#### c) Analyze:
+
+* Why is `result` declared as output?
+* What if we accidentally declared both inputs as outputs?
+* How does the compiler enforce register allocation using these constraints?
+
+---
+
+### Task 3: Introducing Clobbers Safely
+
+In this task, we explicitly inform the compiler that certain registers are being overwritten, even if they are not directly tied to variables.
+
+Create this file:
+
+```c
+// file: clobber.c
+
+#include <stdio.h>
+
+int main() {
+    int a = 42;
+
+    asm volatile (
+        "movl $100, %%eax\n"
+        "addl %%eax, %[val]\n"
+        : [val] "+r" (a)
+        :
+        : "%eax"
+    );
+
+    printf("Final value: %d\n", a);
+    return 0;
+}
+```
+
+#### Explanation:
+
+* `movl $100, %eax` loads the constant `100` into `%eax`.
+* `addl %eax, %[val]` adds `%eax` to the variable `a`.
+* `+r` constraint for `[val]` means it is both read and written.
+* The clobber list `"%eax"` tells the compiler that `%eax` will be modified, preventing conflicts with its own register allocation.
+
+#### a) Compile:
+
+* `gcc -Wall -o clobber clobber.c`
+
+#### b) Inspect generated assembly:
+
+* `objdump -d clobber`
+
+#### c) Reflect:
+
+* Why do we declare `%eax` as clobbered?
+* What could happen if we omit the clobber list?
+* Why is `+r` needed here instead of `=r`?
+
+---
+
+### Task 4: Using Numbered Operand References (%0, %1)
+
+In this task, we introduce the alternative syntax where operands are referenced by position rather than names.
+
+Create the following C file:
+
+```c
+// file: numbered.c
+
+#include <stdio.h>
+
+int main() {
+    int x = 10, y = 20, sum;
+
+    asm volatile (
+        "movl %1, %0\n"
+        "addl %2, %0\n"
+        : "=r" (sum)
+        : "r" (x), "r" (y)
+    );
+
+    printf("Sum is: %d\n", sum);
+    return 0;
+}
+```
+
+#### Explanation:
+
+* `%0` refers to the first operand in the output list (`sum`).
+* `%1` and `%2` refer to the first and second input operands (`x` and `y`).
+* This form is more concise but slightly more error-prone because you must remember the correct ordering.
+* No clobber list is needed since no fixed registers are touched explicitly.
+
+#### a) Compile:
+
+* `gcc -Wall -o numbered numbered.c`
+
+#### b) Inspect generated assembly:
+
+* `objdump -d numbered`
+
+#### c) Reflect:
+
+* How do `%0`, `%1`, `%2` map to the operands?
+* What advantage do named operands (`%[name]`) provide compared to numbered references?
+* When might you prefer one style over the other?
+
+---
+
+## 3) Questions
+
+1. What does the `volatile` keyword mean in inline assembly?
+2. Why is it important to distinguish between input and output operands?
+3. How does GCC use constraints like `"r"`, `"=r"`, or `"+r"`?
+4. What is the purpose of the clobber list?
+5. What could happen if registers are clobbered but not declared?
+6. Why is inline assembly a risky but sometimes necessary tool?
+7. What is the difference between named operands (`%[name]`) and numbered operands (`%0`, `%1`)?
+
+## 4) Advice
+
+Always respect the compiler's optimizer: inline assembly interacts directly with register allocation and instruction scheduling. Declare your inputs, outputs, and clobbers honestly. Use `volatile` if your assembly performs side effects the compiler must not optimize away. Finally, always inspect your compiled binary with `objdump` to ensure your expectations match what the compiler actually emitted. Build confidence step by step before attempting more complex inline assembly involving system calls or register conventions.
