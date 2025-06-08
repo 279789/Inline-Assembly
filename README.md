@@ -193,9 +193,9 @@ int main() {
 
 #### c) Reflect:
 
-* Why do we declare `%eax` as clobbered?
-* What could happen if we omit the clobber list?
-* Why is `+r` needed here instead of `=r`?
+* Why do we declare `%eax` as clobbered?*We declare %eax as clobbed,so that we could use %eax to move 100 inside there for the addition. It is important to do this, because otherwise the compiler could assume that the register stays untouched, which could cause problems.*
+* What could happen if we omit the clobber list? *The compiler could assume that the register stays untouched, which could cause problems.*
+* Why is `+r` needed here instead of `=r`? "+r" stands for read and write acess to the register, which is necessary, because we first read the value of a which is 42, so that we can add 100 to it. Than we write this back to a. For example: "=r" would mean write only, wich for our case would be wrong
 
 ---
 
