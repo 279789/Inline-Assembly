@@ -93,8 +93,8 @@ Here, `nop` is a real x86 assembly instruction that literally means "do nothing.
 
 #### c) Reflect:
 
-* Why does the compiler allow this even without any operands?
-* What would happen if you omit `volatile`?
+* Why does the compiler allow this even without any operands? *This works, because nop(no operation) is an Assembler instruction that lets the cpu do nothing for one cycle, and because you need no further commands for doing nothing, this is also no problem.*
+* What would happen if you omit `volatile`? *For me this works perfactly fine, but it some other cases it could happen that the compiler deletes some of your instructions after the optimisation process."volatile tells the processor to leave the instructions as they are and does not optimise them.*
 
 ---
 
@@ -143,9 +143,9 @@ int main() {
 
 #### c) Analyze:
 
-* Why is `result` declared as output?
-* What if we accidentally declared both inputs as outputs?
-* How does the compiler enforce register allocation using these constraints?
+* Why is `result` declared as output? *Result is declared as an output, because it's the output of the assembler instruction(function), that is given back to main.*
+* What if we accidentally declared both inputs as outputs? *The Compiler doesn't know which variables to use and uses some random numbers*In you do that, you tell the compiler that he ist allowed to manipulate and change these registers, which could cause problems and wrong results
+* How does the compiler enforce register allocation using these constraints? The compiler does do that by following hte rules that you have set for each register. For example "r" means that gcc could use any general purpuse register.
 
 ---
 
@@ -193,9 +193,9 @@ int main() {
 
 #### c) Reflect:
 
-* Why do we declare `%eax` as clobbered?
-* What could happen if we omit the clobber list?
-* Why is `+r` needed here instead of `=r`?
+* Why do we declare `%eax` as clobbered?*We declare %eax as clobbed,so that we could use %eax to move 100 inside there for the addition. It is important to do this, because otherwise the compiler could assume that the register stays untouched, which could cause problems.*
+* What could happen if we omit the clobber list? *The compiler could assume that the register stays untouched, which could cause problems.*
+* Why is `+r` needed here instead of `=r`? "+r" stands for read and write acess to the register, which is necessary, because we first read the value of a which is 42, so that we can add 100 to it. Than we write this back to a. For example: "=r" would mean write only, wich for our case would be wrong
 
 ---
 
@@ -242,21 +242,21 @@ int main() {
 
 #### c) Reflect:
 
-* How do `%0`, `%1`, `%2` map to the operands?
-* What advantage do named operands (`%[name]`) provide compared to numbered references?
-* When might you prefer one style over the other?
+* How do `%0`, `%1`, `%2` map to the operands? The operands get "numbered". The first operand (sum) gets the first number, second one gets the second number ...
+* What advantage do named operands (`%[name]`) provide compared to numbered references? Named operands are more humanfriendly, because it get confussing very fast if you have to work with many operands wich all have only numbers.
+* When might you prefer one style over the other? I think i would always use the named style because it is easier to read.
 
 ---
 
 ## 3) Questions
 
-1. What does the `volatile` keyword mean in inline assembly?
-2. Why is it important to distinguish between input and output operands?
-3. How does GCC use constraints like `"r"`, `"=r"`, or `"+r"`?
-4. What is the purpose of the clobber list?
-5. What could happen if registers are clobbered but not declared?
-6. Why is inline assembly a risky but sometimes necessary tool?
-7. What is the difference between named operands (`%[name]`) and numbered operands (`%0`, `%1`)?
+1. What does the `volatile` keyword mean in inline assembly? *It tells the compiler that he shauldn`t optimize the following section. This is necessary, because otherwise the compiler may delete some of your asm instructions.*
+2. Why is it important to distinguish between input and output operands? *It's important, because otherwise your compiler can't implement your instruction or he implements them wrong.*
+3. How does GCC use constraints like `"r"`, `"=r"`, or `"+r"`? The "r" means general purpuse register. "=r" means write only, and "+r" means read and write.
+4. What is the purpose of the clobber list? The purpose of the clobber list is, that the compiler knows that ... registers are used in the asm instructions. If you leave the clobber list the compiler things that these registers from your instructins stay the same.
+5. What could happen if registers are clobbered but not declared? 
+6. Why is inline assembly a risky but sometimes necessary tool? It is necessary because sometimes in critical parts of the code you want or need to have the full control of the code, but full control means also full responsibility of what happens. The compiler interprets your asm ver similar to what you have written, if that is a mess, the compiler would also do a mess.
+7. What is the difference between named operands (`%[name]`) and numbered operands (`%0`, `%1`)? Named opperands use their name, numbered operands use a number in the code, the number is assigned in the order. Numbered operands are faster to write, but also get very prone to error.
 
 ## 4) Advice
 
