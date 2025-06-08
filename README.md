@@ -242,21 +242,21 @@ int main() {
 
 #### c) Reflect:
 
-* How do `%0`, `%1`, `%2` map to the operands?
-* What advantage do named operands (`%[name]`) provide compared to numbered references?
-* When might you prefer one style over the other?
+* How do `%0`, `%1`, `%2` map to the operands? The operands get "numbered". The first operand (sum) gets the first number, second one gets the second number ...
+* What advantage do named operands (`%[name]`) provide compared to numbered references? Named operands are more humanfriendly, because it get confussing very fast if you have to work with many operands wich all have only numbers.
+* When might you prefer one style over the other? I think i would always use the named style because it is easier to read.
 
 ---
 
 ## 3) Questions
 
-1. What does the `volatile` keyword mean in inline assembly?
-2. Why is it important to distinguish between input and output operands?
-3. How does GCC use constraints like `"r"`, `"=r"`, or `"+r"`?
-4. What is the purpose of the clobber list?
-5. What could happen if registers are clobbered but not declared?
-6. Why is inline assembly a risky but sometimes necessary tool?
-7. What is the difference between named operands (`%[name]`) and numbered operands (`%0`, `%1`)?
+1. What does the `volatile` keyword mean in inline assembly? *It tells the compiler that he shauldn`t optimize the following section. This is necessary, because otherwise the compiler may delete some of your asm instructions.*
+2. Why is it important to distinguish between input and output operands? *It's important, because otherwise your compiler can't implement your instruction or he implements them wrong.*
+3. How does GCC use constraints like `"r"`, `"=r"`, or `"+r"`? The "r" means general purpuse register. "=r" means write only, and "+r" means read and write.
+4. What is the purpose of the clobber list? The purpose of the clobber list is, that the compiler knows that ... registers are used in the asm instructions. If you leave the clobber list the compiler things that these registers from your instructins stay the same.
+5. What could happen if registers are clobbered but not declared? 
+6. Why is inline assembly a risky but sometimes necessary tool? It is necessary because sometimes in critical parts of the code you want or need to have the full control of the code, but full control means also full responsibility of what happens. The compiler interprets your asm ver similar to what you have written, if that is a mess, the compiler would also do a mess.
+7. What is the difference between named operands (`%[name]`) and numbered operands (`%0`, `%1`)? Named opperands use their name, numbered operands use a number in the code, the number is assigned in the order. Numbered operands are faster to write, but also get very prone to error.
 
 ## 4) Advice
 
