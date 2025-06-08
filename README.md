@@ -143,9 +143,9 @@ int main() {
 
 #### c) Analyze:
 
-* Why is `result` declared as output?
-* What if we accidentally declared both inputs as outputs?
-* How does the compiler enforce register allocation using these constraints?
+* Why is `result` declared as output? *Result is declared as an output, because it's the output of the assembler instruction(function), that is given back to main.*
+* What if we accidentally declared both inputs as outputs? *The Compiler doesn't know which variables to use and uses some random numbers*In you do that, you tell the compiler that he ist allowed to manipulate and change these registers, which could cause problems and wrong results
+* How does the compiler enforce register allocation using these constraints? The compiler does do that by following hte rules that you have set for each register. For example "r" means that gcc could use any general purpuse register.
 
 ---
 
