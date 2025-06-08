@@ -93,8 +93,8 @@ Here, `nop` is a real x86 assembly instruction that literally means "do nothing.
 
 #### c) Reflect:
 
-* Why does the compiler allow this even without any operands?
-* What would happen if you omit `volatile`?
+* Why does the compiler allow this even without any operands? *This works, because nop(no operation) is an Assembler instruction that lets the cpu do nothing for one cycle, and because you need no further commands for doing nothing, this is also no problem.*
+* What would happen if you omit `volatile`? *For me this works perfactly fine, but it some other cases it could happen that the compiler deletes some of your instructions after the optimisation process."volatile tells the processor to leave the instructions as they are and does not optimise them.*
 
 ---
 
